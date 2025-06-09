@@ -80,3 +80,66 @@ function enviarNotificacion(usuario) {
 
 module.exports = { enviarNotificacion };
 ```
+
+## Testing componentes React
+
+¿Qué necesitas instalar para testear React? En un proyecto de React hecho con Vite o Create React App, normalmente ya viene casi todo. Si no, puedes instalarlo así:
+
+```bash
+npm install --save-dev jest @testing-library/react @testing-library/jest-dom
+```
+
+Y agregar en setupTests.js:
+
+```js
+// setupTests.js
+import '@testing-library/jest-dom';
+````
+
+Y en package.json (si usas Vite):
+
+```json
+"jest": {
+  "setupFilesAfterEnv": ["<rootDir>/setupTests.js"],
+  "testEnvironment": "jsdom"
+}
+```
+
+### Ejemplo pedagógico: MiComponente.jsx
+
+
+```jsx
+// MiComponente.jsx
+import React from 'react';
+
+function MiComponente() {
+  return <h1>Hola, soy un componente!</h1>;
+}
+
+export default MiComponente;
+```
+
+
+### Testear que el archivo exporta una función válida
+Esto lo puedes usar para reforzar la idea de “un componente es una función que retorna JSX”:
+
+```jsx
+// ComponenteExportado.test.js
+import MiComponente from './MiComponente';
+
+test('el componente exportado es una función', () => {
+  expect(typeof MiComponente).toBe('function');
+});
+```
+
+### Verificar que renderiza contenido HTML, sin importar el texto
+
+```jsx
+import { render, screen } from '@testing-library/react';
+import MiComponente from './MiComponente';
+
+test('el componente renderiza algo de HTML', () => {
+  const { container } = render(<MiComponente />);
+  expect(container.firstChild).not.toBeNull();
+});
+```
