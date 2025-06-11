@@ -53,6 +53,7 @@ TypeError: Cannot read property 'nombre' of null
 > ⚠️ Esto rompe la app en producción. Y lo peor es que el usuario no sabrá por qué no recibió su notificación. Tú tampoco... a menos que tengas pruebas.
 
 ## ✅ Pruebas unitarias con Jest
+
 ```js
 const { enviarNotificacion } = require('./notificaciones');
 
@@ -81,28 +82,65 @@ function enviarNotificacion(usuario) {
 module.exports = { enviarNotificacion };
 ```
 
-## Testing componentes React
+## Testing para componentes React con Vitest
+
+Por qué usamos Vite + Vitest en vez de Jest?
+Cuando trabajamos con React, una de las cosas importantes es poder probar nuestros componentes. Hay varias herramientas para eso, y una de las más conocidas es `Jest`. Pero como estamos usando Vite para nuestro proyecto, lo mejor es usar **Vitest**, que está hecha para funcionar perfectamente con Vite.
+
+Basicamente:
+
+- **Vitest se lleva mejor con Vite:** Como Vite es quien "enciende" nuestra aplicación y carga todos los archivos, Vitest ya entiende todo lo que Vite usa: React, archivos .jsx, CSS, imágenes, etc. Con Jest tendríamos que configurar todo eso manualmente.
+
+- **Es más rápido:** Vitest usa una tecnología muy veloz para procesar los archivos, así que los tests se ejecutan casi al instante. Esto te permite probar tu código sin tener que esperar.
+
+- **Casi no hay que configurar nada:** Con Jest hay que instalar varias cosas extra (como Babel) para que entienda React y JSX. Con Vitest, solo necesitas instalar un plugin y ya funciona con React.
+
+- **La forma de escribir los tests es igual:** Vitest usa la misma estructura que Jest:
+
+```js
+test('algo', () => {
+  expect(...).toBe(...);
+});
+```
+> Así que si ya sabes usar Jest, te sentirás cómodo con Vitest.
 
 ¿Qué necesitas instalar para testear React? En un proyecto de React hecho con Vite o Create React App, normalmente ya viene casi todo. Si no, puedes instalarlo así:
 
 ```bash
-npm install --save-dev jest @testing-library/react @testing-library/jest-dom
+npm install --save-dev vitest @vitejs/plugin-react @testing-library/react @testing-library/jest-dom
 ```
 
-Y agregar en setupTests.js:
-
-```js
-// setupTests.js
-import '@testing-library/jest-dom';
-````
-
-Y en package.json (si usas Vite):
+Y añade en tu package.json un script para lanzar los tests con Vitest:
 
 ```json
-"jest": {
-  "setupFilesAfterEnv": ["<rootDir>/setupTests.js"],
-  "testEnvironment": "jsdom"
-}
+
+  "scripts": {
+    "test": "vitest"
+  }
+```
+
+Configura Vite para Vitest y JSX. En la raíz de tu proyecto, edita si ya lo tienes (o crea) vite.config.js:
+
+```js
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    globals: true,              // permite usar test, expect… sin importarlos
+    environment: 'jsdom',       // simula un navegador
+    transformMode: {
+      web: [/\.[jt]sx?$/]       // que esbuild procese .js/.jsx/.ts/.tsx
+    }
+  }
+})
+```
+
+Recuerda que **Vitest** reconocerá y transformará JSX sólo en archivos con extensión .jsx o .tsx. Por ejemplo:
+
+```bash
+src/js/test/Home.test.jsx
 ```
 
 ### Ejemplo pedagógico: MiComponente.jsx
@@ -120,26 +158,15 @@ export default MiComponente;
 ```
 
 
-### Testear que el archivo exporta una función válida
-Esto lo puedes usar para reforzar la idea de “un componente es una función que retorna JSX”:
+### Testear que renderiza contenido HTML
 
 ```jsx
-// ComponenteExportado.test.js
-import MiComponente from './MiComponente';
+// src/js/test/MiComponenteRender.test.jsx
+import { render, screen } from '@testing-library/react'
+import MiComponente from '../components/MiComponente'
 
-test('el componente exportado es una función', () => {
-  expect(typeof MiComponente).toBe('function');
-});
-```
-
-### Verificar que renderiza contenido HTML, sin importar el texto
-
-```jsx
-import { render, screen } from '@testing-library/react';
-import MiComponente from './MiComponente';
-
-test('el componente renderiza algo de HTML', () => {
-  const { container } = render(<MiComponente />);
-  expect(container.firstChild).not.toBeNull();
-});
+test('el componente renderiza HTML', () => {
+  const { container } = render(<MiComponente />)
+  expect(container.firstChild).not.toBeNull()
+})
 ```
